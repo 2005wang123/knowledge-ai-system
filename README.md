@@ -1,4 +1,3 @@
-```markdown
 # 个人知识库 AI 智能问答系统
 ![Java](https://img.shields.io/badge/Java-8+-blue.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-green.svg)
