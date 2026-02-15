@@ -1,0 +1,30 @@
+# Java项目通用过滤
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+hs_err_pid*
+replay_pid*
+target/
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.DS_Store
+
+# SpringBoot相关（过滤配置文件/密钥）
+application.yml
+application.properties
+bootstrap.yml
+bootstrap.properties
+
+# 敏感文件（自定义）
+*.key
+*.secret
+config/
+logs/
+upload/  # 如果你有文件上传目录，也过滤掉
+
+# 百度千帆密钥相关（重点）
+qianfan-key.txt  # 如果你把密钥存在单独文件里，也过滤
