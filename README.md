@@ -137,8 +137,8 @@ npm run dev
 
 ## 📞 联系我
 如果有任何问题或建议，欢迎提 Issue 或联系我：
-- GitHub：[你的用户名](https://github.com/你的用户名)
-- 邮箱：your-email@example.com
+- GitHub：[2005wang123](https://github.com/2005wang123)
+- 邮箱：2470939152@qq.com
 
 ---
 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持一下！
