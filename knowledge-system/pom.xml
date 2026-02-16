@@ -95,7 +95,24 @@
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- Spring Boot Test 核心依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 
+        <!-- JUnit 5 依赖（Spring Boot 2.2+ 默认使用） -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 4. 工具类 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -118,7 +135,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>${fastjson.version}</version>
+            <version>2.0.43</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -160,15 +177,18 @@
             <artifactId>java-sdk</artifactId>
             <version>${baidu-aip.version}</version>
         </dependency>
-
-        <!-- 可选：千帆官方SDK（如需使用则解开注释） -->
-        <!--
+        <!-- 在百度AI SDK依赖中排除slf4j-simple -->
         <dependency>
-            <groupId>com.baidubce</groupId>
-            <artifactId>qianfan</artifactId>
-            <version>0.3.1</version>
+            <groupId>com.baidu.aip</groupId>
+            <artifactId>java-sdk</artifactId>
+            <version>4.15.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        -->
     </dependencies>
 
     <!-- 构建配置 -->

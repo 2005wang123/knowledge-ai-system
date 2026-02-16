@@ -4,6 +4,7 @@ package com.zhiyou.knowledge.service;
  * AI问答服务接口
  */
 public interface AIService {
+
     /**
      * 根据文档内容回答问题
      * @param documentId 文档ID
