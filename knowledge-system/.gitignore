@@ -1,30 +1,30 @@
-# Java项目通用过滤
-*.class
-*.log
-*.ctxt
-.mtj.tmp/
-hs_err_pid*
-replay_pid*
-target/
+# ========== 敏感配置文件（重点！排除包含密码的配置） ==========
+# 排除真实的配置文件（本地保留，不上传）
+src/main/resources/application.yml
+src/main/resources/application.properties
+# 配置模板文件（可上传，无敏感信息）
+!src/main/resources/application.yml
+
+# ========== IDEA 配置文件 ==========
 .idea/
 *.iml
-*.ipr
 *.iws
+*.ipr
 out/
-.DS_Store
+target/
 
-# SpringBoot相关（过滤配置文件/密钥）
-application.yml
-application.properties
-bootstrap.yml
-bootstrap.properties
-
-# 敏感文件（自定义）
-*.key
-*.secret
-config/
+# ========== Maven 产物 ==========
+*.jar
+*.war
+*.ear
 logs/
-upload/  # 如果你有文件上传目录，也过滤掉
+.mvn/
+mvnw
+mvnw.cmd
 
-# 百度千帆密钥相关（重点）
-qianfan-key.txt  # 如果你把密钥存在单独文件里，也过滤
+# ========== 系统文件 ==========
+.DS_Store
+Thumbs.db
+
+# ========== 文件上传目录 ==========
+D:/knowledge_upload/

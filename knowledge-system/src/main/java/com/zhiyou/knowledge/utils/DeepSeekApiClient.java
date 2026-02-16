@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 @Component // 核心：让Spring接管这个类，才能在Service中注入
 public class DeepSeekApiClient {
     // ========== 替换成你自己的DeepSeek API Key ==========
-    private static final String DEEPSEEK_API_KEY = "sk-0d545b2485264cea9c36531edceb4028";
+    private static final String DEEPSEEK_API_KEY = "sk-xxx"; //你的DeepSeek API Key
     // DeepSeek通用对话接口地址（固定，不用改）
     private static final String DEEPSEEK_CHAT_URL = "https://api.deepseek.com/v1/chat/completions";
 
