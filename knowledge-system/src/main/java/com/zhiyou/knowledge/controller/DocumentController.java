@@ -8,6 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.util.List;
 
+/**
+ * 文档控制器（仅处理文档上传/查询，无向量/问答接口）
+ */
 @RestController
 @RequestMapping("/document")
 public class DocumentController {
@@ -15,15 +18,35 @@ public class DocumentController {
     @Resource
     private DocumentService documentService;
 
-    // 上传文档接口
+    /**
+     * 上传文档接口
+     */
     @PostMapping("/upload")
     public Document upload(@RequestParam("file") MultipartFile file) throws Exception {
         return documentService.upload(file);
     }
 
-    // 新增：查询所有文档列表接口
-    @GetMapping("/list")
-    public List<Document> getDocList() {
+    /**
+     * 根据ID查询文档
+     */
+    @GetMapping("/getById/{id}")
+    public Document getById(@PathVariable Long id) {
+        return documentService.getById(id);
+    }
+
+    /**
+     * 查询所有文档
+     */
+    @GetMapping("/listAll")
+    public List<Document> listAll() {
         return documentService.listAll();
+    }
+
+    /**
+     * 清空所有文档
+     */
+    @DeleteMapping("/clearAll")
+    public void clearAllDocuments() {
+        documentService.clearAllDocuments();
     }
 }

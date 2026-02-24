@@ -1,0 +1,51 @@
+# Spring核心配置
+spring:
+  main:
+    allow-circular-references: true  # 解决循环依赖问题
+  servlet:
+    multipart:
+      max-file-size: 10MB           # 文档上传大小限制
+      max-request-size: 10MB
+  datasource:
+    # 替换成你自己的MySQL配置
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/knowledge_ai?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  encoding:
+    charset: UTF-8
+    force: true
+
+# DeepSeek API 配置（AI问答用）
+deepseek:
+  api-key: sk-0d545b2485264cea9c36531edceb4028  # 你的有效DeepSeek API Key
+  base-url: https://api.deepseek.com
+  chat-model: deepseek-chat
+  timeout: 30000
+
+# 文档上传路径配置
+file:
+  upload-path: D:/knowledge_ai/upload/  # 本地上传路径
+  auto-create-dir: true  # 自动创建上传目录
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  type-aliases-package: com.zhiyou.knowledge.entity
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true  # 开启驼峰转换
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 显示SQL（调试用）
+    call-setters-on-nulls: true  # 处理空值
