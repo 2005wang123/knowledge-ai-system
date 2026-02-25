@@ -165,7 +165,7 @@ knowledge-ai/
 ```
 
 ## 📸 效果截图
-![截图](images/ceshi.png)
+![截图](ceshi.png)
 
 ## 贡献指南
 
