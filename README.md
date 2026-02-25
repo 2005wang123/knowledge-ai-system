@@ -48,8 +48,8 @@ cd knowledge-ai-system/backend
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/knowledge?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root # 你的MySQL用户名
-    password: 123456 # 你的MySQL密码
+    username: MySQLusername # 你的MySQL用户名
+    password: MySQLpassword # 你的MySQL密码
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # 文件上传路径（请确保该目录存在且有读写权限）
@@ -58,7 +58,7 @@ file:
 
 # DeepSeek API 配置（替换为你的API Key）
 deepseek:
-  api-key: your-deepseek-api-key
+  api-key: your-deepseek-api-key # 你的deepseekAPI
   base-url: https://api.deepseek.com/v1
 ```
 
