@@ -1,0 +1,26 @@
+{
+  "name": "knowledge-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.13.5",
+    "element-plus": "^2.13.2",
+    "highlight.js": "^11.11.1",
+    "mammoth": "^1.11.0",
+    "marked": "^17.0.2",
+    "pdfjs-dist": "^5.4.624",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.2",
+    "vite": "^7.3.1"
+  }
+}
