@@ -46,7 +46,7 @@
 
 1. **克隆项目**
    ```bash
-   git clone https://github.com/你的用户名/knowledge-ai-system.git
+   git clone https://github.com/2005wang123/knowledge-ai-system.git
    cd knowledge-ai-system
    ```
 
