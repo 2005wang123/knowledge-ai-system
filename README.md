@@ -164,6 +164,9 @@ knowledge-ai/
 └── README.md                                   # 项目说明文档
 ```
 
+## 📸 效果截图
+![截图](ceshi.png)
+
 ## 贡献指南
 
 欢迎提交 Issue 和 Pull Request！
