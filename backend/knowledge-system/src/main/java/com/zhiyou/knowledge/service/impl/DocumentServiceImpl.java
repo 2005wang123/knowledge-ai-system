@@ -6,6 +6,9 @@ import com.zhiyou.knowledge.entity.Document;
 import com.zhiyou.knowledge.mapper.DocumentMapper;
 import com.zhiyou.knowledge.service.DocumentService;
 import org.apache.commons.io.FileUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +16,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * 文档服务实现类（完全移除向量相关逻辑）
+ * 文档服务实现类（支持 TXT/ DOCX/ PDF 解析）
  */
 @Service
 public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> implements DocumentService {
@@ -31,7 +37,7 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
     private DocumentMapper documentMapper;
 
     /**
-     * 上传文档（核心方法：仅保存文件+数据库）
+     * 上传文档（核心方法：支持 TXT/ DOCX/ PDF 解析 + 保存文件+数据库）
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -65,16 +71,28 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         file.transferTo(destFile);
         System.out.println("===== 文件保存成功，路径：" + fullFilePath + " =====");
 
-        // 5. 解析TXT文件内容（仅读取，无向量处理）
+        // 5. 解析文件内容（支持 TXT/ DOCX/ PDF）
         String fileContent = "";
-        if (originalFileName.toLowerCase().endsWith(".txt")) {
-            try {
+        try {
+            if (originalFileName.toLowerCase().endsWith(".txt")) {
+                // 解析 TXT 文件
                 fileContent = FileUtils.readFileToString(destFile, "UTF-8");
                 System.out.println("===== TXT文件解析成功，内容长度：" + fileContent.length() + " =====");
-            } catch (Exception e) {
-                System.out.println("===== TXT文件解析失败：" + e.getMessage() + " =====");
-                fileContent = "文件内容解析失败";
+            } else if (originalFileName.toLowerCase().endsWith(".docx")) {
+                // 解析 DOCX 文件（新增表格解析逻辑）
+                fileContent = parseDocxFile(destFile);
+                System.out.println("===== DOCX文件解析成功，内容长度：" + fileContent.length() + " =====");
+            } else if (originalFileName.toLowerCase().endsWith(".pdf")) {
+                // 解析 PDF 文件
+                fileContent = parsePdfFile(destFile);
+                System.out.println("===== PDF文件解析成功，内容长度：" + fileContent.length() + " =====");
+            } else {
+                fileContent = "不支持的文件格式，仅支持 TXT/ DOCX/ PDF";
+                System.out.println("===== 不支持的文件格式：" + suffix + " =====");
             }
+        } catch (Exception e) {
+            System.out.println("===== 文件解析失败：" + e.getMessage() + " =====");
+            fileContent = "文件内容解析失败：" + e.getMessage();
         }
 
         // 6. 保存到数据库
@@ -95,6 +113,80 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
 
         // 7. 返回保存后的文档对象（包含ID）
         return document;
+    }
+
+    /**
+     * 解析 DOCX 文件内容（新增表格解析，转Markdown格式）
+     */
+    private String parseDocxFile(File docxFile) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (InputStream is = new FileInputStream(docxFile);
+             XWPFDocument document = new XWPFDocument(is)) {
+
+            // 遍历文档所有元素（段落+表格）
+            for (IBodyElement element : document.getBodyElements()) {
+                if (element instanceof XWPFParagraph) {
+                    // 处理普通段落
+                    XWPFParagraph paragraph = (XWPFParagraph) element;
+                    String paraText = paragraph.getText();
+                    if (paraText != null && !paraText.trim().isEmpty()) {
+                        content.append(paraText).append("\n\n");
+                    }
+                } else if (element instanceof XWPFTable) {
+                    // 处理表格 → 转Markdown格式
+                    XWPFTable table = (XWPFTable) element;
+                    List<XWPFTableRow> rows = table.getRows();
+                    if (rows.isEmpty()) continue;
+
+                    // 1. 表头行
+                    XWPFTableRow headerRow = rows.get(0);
+                    content.append("|");
+                    for (XWPFTableCell cell : headerRow.getTableCells()) {
+                        content.append(cell.getText().trim()).append("|");
+                    }
+                    content.append("\n");
+
+                    // 2. 分隔线行
+                    content.append("|");
+                    for (int i = 0; i < headerRow.getTableCells().size(); i++) {
+                        content.append("---|");
+                    }
+                    content.append("\n");
+
+                    // 3. 数据行
+                    for (int i = 1; i < rows.size(); i++) {
+                        XWPFTableRow dataRow = rows.get(i);
+                        content.append("|");
+                        for (XWPFTableCell cell : dataRow.getTableCells()) {
+                            content.append(cell.getText().trim()).append("|");
+                        }
+                        content.append("\n");
+                    }
+                    content.append("\n\n"); // 表格后加空行，区分内容
+                }
+            }
+        }
+        return content.toString().trim();
+    }
+
+    /**
+     * 解析 PDF 文件内容（解决中文乱码）
+     */
+    private String parsePdfFile(File pdfFile) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            // 检查PDF是否加密
+            if (document.isEncrypted()) {
+                throw new RuntimeException("PDF文件已加密，无法解析");
+            }
+            // 提取文本（支持中文）
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setSortByPosition(true); // 按页面顺序提取
+            stripper.setStartPage(1);
+            stripper.setEndPage(document.getNumberOfPages());
+            content.append(stripper.getText(document));
+        }
+        return content.toString().trim();
     }
 
     /**
@@ -120,6 +212,51 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
      */
     @Override
     public void clearAllDocuments() {
+        // 先删除所有物理文件，再清空数据库
+        List<Document> allDocs = listAll();
+        for (Document doc : allDocs) {
+            File file = new File(doc.getFilePath());
+            if (file.exists()) {
+                file.delete();
+            }
+        }
         documentMapper.delete(null);
+    }
+
+    /**
+     * 新增：根据ID删除单个文档
+     * 包含物理文件删除 + 数据库记录删除
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteById(Long id) throws Exception {
+        // 1. 查询文档信息
+        Document document = documentMapper.selectById(id);
+        if (document == null) {
+            System.out.println("===== 文档不存在，ID：" + id + " =====");
+            return false;
+        }
+
+        // 2. 删除本地物理文件
+        File file = new File(document.getFilePath());
+        if (file.exists()) {
+            boolean isFileDeleted = file.delete();
+            if (isFileDeleted) {
+                System.out.println("===== 物理文件删除成功，路径：" + document.getFilePath() + " =====");
+            } else {
+                throw new RuntimeException("物理文件删除失败，路径：" + document.getFilePath());
+            }
+        } else {
+            System.out.println("===== 物理文件不存在，路径：" + document.getFilePath() + " =====");
+        }
+
+        // 3. 删除数据库中的记录
+        int deleteCount = documentMapper.deleteById(id);
+        if (deleteCount > 0) {
+            System.out.println("===== 数据库记录删除成功，ID：" + id + " =====");
+            return true;
+        } else {
+            throw new RuntimeException("数据库记录删除失败，ID：" + id);
+        }
     }
 }
