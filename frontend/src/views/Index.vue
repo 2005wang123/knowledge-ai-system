@@ -98,6 +98,15 @@
           <span>{{ new Date(doc.createTime).toLocaleDateString() }}</span>
         </div>
       </div>
+      <!-- 改回 type="text" 消除警告 -->
+      <el-button 
+        type="text" 
+        icon="Delete" 
+        class="delete-btn"
+        @click.stop="handleDelete(doc.id, doc.fileName)"
+        size="small"
+      >
+      </el-button>
     </div>
   </div>
 </div>
@@ -238,10 +247,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   FolderOpened, Clock, Star, StarFilled, UploadFilled,
-  DocumentRemove, Document, Avatar, User, ArrowRight, ChatDotRound
+  DocumentRemove, Document, Avatar, User, ArrowRight, ChatDotRound, Delete
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
@@ -323,6 +332,42 @@ const getDocList = async () => {
   } catch (error) {
     console.error('获取文档列表失败：', error)
     ElMessage.error('获取文档列表失败')
+  }
+}
+
+// 新增：删除文档方法
+const handleDelete = async (docId, fileName) => {
+  try {
+    // 确认删除
+    await ElMessageBox.confirm(
+      `确定要删除文档【${fileName}】吗？删除后无法恢复！`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    // 调用后端删除接口
+    const res = await axios.delete(`/document/delete/${docId}`)
+    if (res.data.success) {
+      ElMessage.success('文档删除成功！')
+      // 刷新文档列表
+      await getDocList()
+      // 如果删除的是当前选中的文档，清空选中状态
+      if (selectedDoc.value && selectedDoc.value.id === docId) {
+        selectedDoc.value = null
+        messages.value = []
+      }
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') { // 排除取消操作的异常
+      console.error('删除文档失败：', error)
+      ElMessage.error('删除失败：' + (error.response?.data?.message || error.message))
+    }
   }
 }
 
@@ -439,7 +484,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 保留你原有所有样式，无需修改 */
+/* 保留你原有所有样式，新增删除按钮样式 */
 .knowledge-app {
   display: flex;
   flex-direction: column;
@@ -679,6 +724,23 @@ onUnmounted(() => {
   gap: 12px;
 }
 
+/* 新增：删除按钮样式（优化视觉，抵消text类型的默认样式） */
+.delete-btn {
+  color: #F56C6C !important;
+  opacity: 0.7;
+  transition: all 0.2s;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-right: 4px !important;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background: transparent !important;
+}
+
 .star-btn {
   flex-shrink: 0 !important;
   width: 32px !important;
@@ -815,6 +877,29 @@ onUnmounted(() => {
   font-size: 15px;
   color: #303133;
 }
+
+/* ========== 新增：表格样式（核心修改） ========== */
+.message-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.message-content th,
+.message-content td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  text-align: center; /* 内容居中 */
+  font-weight: normal; /* 取消表头加粗 */
+}
+
+.message-content th {
+  background-color: #f8fafc; /* 表头浅背景 */
+}
+/* ========== 表格样式结束 ========== */
 
 .message.assistant .message-content {
   border-top-left-radius: 6px;
