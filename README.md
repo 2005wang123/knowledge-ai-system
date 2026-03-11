@@ -157,7 +157,8 @@ knowledge-ai/
 │   │   │   │       ├── DocumentServiceImpl.java
 │   │   │   │       └── KnowledgeServiceImpl.java
 │   │   │   └── util/
-│   │   │       └── DeepSeekUtils.java        # DeepSeek API工具类
+│   │   │       ├── DeepSeekUtils.java        # DeepSeek API工具类
+│   │   │       └── WordParserUtil.java       # 解析Word（.docx）文档的工具类
 │   │   └── resources/
 │   │       └── application.yml                # 配置文件
 │   └── test/                                  # 测试目录
