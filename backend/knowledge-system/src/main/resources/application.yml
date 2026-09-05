@@ -6,6 +6,12 @@ spring:
     multipart:
       max-file-size: 10MB           # 文档上传大小限制
       max-request-size: 10MB
+  sql:
+    init:
+      mode: always                 # 每次启动执行 schema.sql（IF NOT EXISTS，幂等安全）
+      schema-locations: classpath:schema.sql
+      encoding: utf-8
+      continue-on-error: false
   datasource:
     # 替换成你自己的MySQL配置
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -34,7 +40,8 @@ deepseek:
   api-key: sk-xxxxxx  # 你的有效DeepSeek API Key
   base-url: https://api.deepseek.com
   chat-model: deepseek-chat
-  timeout: 30000
+  timeout: 60000                # AI 响应超时（毫秒），适当调长避免长回答被中断
+  max-content-length: 30000    # 发送给 AI 的文档内容最大字符数（超出自动截断）
 
 # 文档上传路径配置
 file:

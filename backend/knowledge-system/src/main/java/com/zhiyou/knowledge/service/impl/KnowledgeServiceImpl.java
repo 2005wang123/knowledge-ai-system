@@ -25,12 +25,12 @@ public class KnowledgeServiceImpl implements KnowledgeService {
         // 1. 根据文档ID查询文档内容
         Document document = documentMapper.selectById(docId);
         if (document == null) {
-            throw new RuntimeException("文档不存在");
+            throw new IllegalArgumentException("文档不存在，请重新选择文档");
         }
 
         String docContent = document.getContent();
         if (docContent == null || docContent.trim().isEmpty()) {
-            throw new RuntimeException("文档内容为空，无法进行问答");
+            throw new IllegalArgumentException("文档内容为空，无法进行问答，请重新上传文档");
         }
 
         // 2. 调用DeepSeek API生成回答

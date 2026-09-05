@@ -49,4 +49,12 @@ public class DocumentController {
     public void clearAllDocuments() {
         documentService.clearAllDocuments();
     }
+
+    /**
+     * 根据ID删除单个文档
+     */
+    @DeleteMapping("/delete/{id}")
+    public boolean deleteById(@PathVariable Long id) throws Exception {
+        return documentService.deleteById(id);
+    }
 }

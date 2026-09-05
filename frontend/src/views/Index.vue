@@ -253,11 +253,12 @@ import {
   DocumentRemove, Document, Avatar, User, ArrowRight, ChatDotRound, Delete
 } from '@element-plus/icons-vue'
 import axios from 'axios'
+import DOMPurify from 'dompurify'
 
 // Axios配置
 axios.defaults.baseURL = 'http://localhost:8080/api'
 axios.defaults.withCredentials = true
-axios.defaults.timeout = 30000
+axios.defaults.timeout = 120000 // 与后端 DeepSeek 超时(60s)匹配，预留网络余量
 
 // 新增：el-upload组件实例，用于手动控制上传
 const uploadRef = ref(null)
@@ -274,7 +275,7 @@ const formatTime = (time) => {
 const { proxy } = getCurrentInstance()
 const renderMarkdown = (content) => {
   if (!content) return ''
-  return proxy?.$marked ? proxy.$marked(content) : content.replace(/\n/g, '<br>')
+  return DOMPurify.sanitize(proxy?.$marked ? proxy.$marked(content) : content.replace(/\n/g, '<br>'))
 }
 
 // 状态管理
@@ -351,7 +352,7 @@ const handleDelete = async (docId, fileName) => {
 
     // 调用后端删除接口
     const res = await axios.delete(`/document/delete/${docId}`)
-    if (res.data.success) {
+    if (res.data === true) {
       ElMessage.success('文档删除成功！')
       // 刷新文档列表
       await getDocList()
@@ -452,14 +453,14 @@ const sendMessage = async () => {
   } catch (error) {
     typing.value = false
     console.error('AI回答失败:', error)
-    // 【修复】捕获向量库不存在的错误，给用户友好提示
-    let errorMsg = '抱歉，问答服务异常。'
-    if (error.response && error.response.data && error.response.data.msg) {
-      errorMsg = error.response.data.msg
+    // 捕获问答失败，给用户友好提示
+    let errorMsg = '抱歉，问答服务异常，请稍后重试。'
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMsg = error.response.data.message
     }
     messages.value.push({
       role: 'assistant',
-      content: `❌ ${errorMsg} 请检查向量服务是否正常启动。`
+      content: `❌ ${errorMsg}`
     })
   }
 }

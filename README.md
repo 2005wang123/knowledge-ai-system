@@ -56,6 +56,8 @@
    CREATE DATABASE knowledge_ai DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
 
+   > 说明：后端首次启动时会自动执行 `schema.sql` 创建 `document` 表（幂等，可重复执行），无需手动建表。
+
 3. **修改配置文件**
    打开 `src/main/resources/application.yml`，修改以下配置：
    ```yaml

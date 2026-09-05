@@ -1,6 +1,8 @@
 package com.zhiyou.knowledge.util;
 
 import com.alibaba.fastjson2.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import okhttp3.*;
@@ -15,6 +17,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class DeepSeekUtils {
+    private static final Logger log = LoggerFactory.getLogger(DeepSeekUtils.class);
     @Value("${deepseek.api-key}")
     private String apiKey;
 
@@ -26,6 +29,10 @@ public class DeepSeekUtils {
 
     @Value("${deepseek.timeout}")
     private int timeout;
+
+    /** 文档内容最大字符数，超出部分截断，防止超出模型上下文窗口 */
+    @Value("${deepseek.max-content-length:30000}")
+    private int maxContentLength;
 
     private OkHttpClient client;
 
@@ -48,6 +55,12 @@ public class DeepSeekUtils {
     public String generateAnswer(String question, String docContent) throws Exception {
         if (question == null || question.trim().isEmpty()) {
             throw new IllegalArgumentException("问题不能为空");
+        }
+
+        // 防止文档内容过长导致超出模型上下文窗口：超出部分截断
+        if (docContent != null && docContent.length() > maxContentLength) {
+            log.warn("文档内容过长({}字符)，已截断至{}字符", docContent.length(), maxContentLength);
+            docContent = docContent.substring(0, maxContentLength) + "\n……（文档内容过长，已截断）";
         }
 
         // 构建提示词，让AI基于文档内容回答
@@ -92,12 +105,14 @@ public class DeepSeekUtils {
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
+            String responseBody = response.body() == null ? "" : response.body().string();
             if (!response.isSuccessful()) {
-                throw new Exception("AI问答失败：" + response.message());
+                // 记录模型服务返回的具体错误（如 401 密钥无效、400 上下文超长、429 限流等），便于排查
+                log.error("DeepSeek API 调用失败, HTTP {}: {}", response.code(), extractErrorMessage(responseBody));
+                throw new Exception("AI问答失败：模型服务返回错误(HTTP " + response.code() + ")");
             }
 
             // 解析响应
-            String responseBody = response.body().string();
             JSONObject result = JSON.parseObject(responseBody);
             JSONArray choices = result.getJSONArray("choices");
             if (choices == null || choices.isEmpty()) {
@@ -105,6 +120,25 @@ public class DeepSeekUtils {
             }
 
             return choices.getJSONObject(0).getJSONObject("message").getString("content");
+        }
+    }
+
+    /**
+     * 从 DeepSeek 错误响应中提取可读的错误信息
+     */
+    private String extractErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return "响应体为空";
+        }
+        try {
+            JSONObject obj = JSON.parseObject(responseBody);
+            JSONObject error = obj.getJSONObject("error");
+            if (error != null && error.getString("message") != null) {
+                return error.getString("message");
+            }
+            return responseBody;
+        } catch (Exception e) {
+            return responseBody.length() > 500 ? responseBody.substring(0, 500) : responseBody;
         }
     }
 }

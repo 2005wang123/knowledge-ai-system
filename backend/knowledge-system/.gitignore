@@ -28,3 +28,9 @@ Thumbs.db
 
 # ========== 文件上传目录 ==========
 D:/knowledge_upload/
+# ========== 本地上传目录（防止误提交用户上传的文件） ==========
+uploads/
+
+# ========== 本地敏感配置（真实密码/API Key 请勿提交） ==========
+application-local.yml
+application-local.yaml

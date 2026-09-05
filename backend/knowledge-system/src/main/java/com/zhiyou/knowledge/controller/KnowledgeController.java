@@ -30,14 +30,33 @@ public class KnowledgeController {
     @PostMapping("/generate-answer")
     public String generateAnswer(@RequestBody Map<String, Object> params) {
         try {
-            String question = (String) params.get("question");
-            Long docId = Long.parseLong(params.get("docId").toString());
+            Object questionObj = params.get("question");
+            Object docIdObj = params.get("docId");
 
-            return knowledgeService.generateAnswer(question, docId);
+            // 参数校验：给用户明确的错误提示
+            if (questionObj == null || questionObj.toString().trim().isEmpty()) {
+                return "问答失败：请输入问题";
+            }
+            if (docIdObj == null || docIdObj.toString().trim().isEmpty()) {
+                return "问答失败：缺少文档ID";
+            }
+
+            Long docId;
+            try {
+                docId = Long.parseLong(docIdObj.toString());
+            } catch (NumberFormatException e) {
+                log.warn("问答接口 docId 格式错误: {}", docIdObj);
+                return "问答失败：文档ID格式不正确";
+            }
+
+            return knowledgeService.generateAnswer(questionObj.toString().trim(), docId);
+        } catch (IllegalArgumentException e) {
+            // 业务校验类错误（如：文档不存在、文档内容为空），直接把原因返回给用户
+            log.warn("问答业务校验失败: {}", e.getMessage());
+            return e.getMessage();
         } catch (Exception e) {
-            // 将异常详情记录到服务器日志（供开发排查）
+            // 其它异常（如 DeepSeek 调用失败）：记录详细日志，返回通用提示
             log.error("生成AI回答时发生异常", e);
-            // 返回通用错误提示，不包含敏感信息
             return "问答失败：服务器处理请求时出错，请稍后重试";
         }
     }

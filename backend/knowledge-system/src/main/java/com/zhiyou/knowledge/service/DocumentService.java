@@ -29,4 +29,9 @@ public interface DocumentService extends IService<Document> {
      * 清空所有文档
      */
     void clearAllDocuments();
+
+    /**
+     * 根据ID删除单个文档（含物理文件与数据库记录）
+     */
+    boolean deleteById(Long id) throws Exception;
 }

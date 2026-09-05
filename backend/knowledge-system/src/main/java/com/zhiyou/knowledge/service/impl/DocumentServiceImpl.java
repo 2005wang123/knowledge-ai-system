@@ -57,11 +57,20 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
             throw new RuntimeException("文件必须包含后缀名（如.txt/.docx/.pdf）");
         }
 
+        // 安全加固：只允许 TXT / DOCX / PDF 三种格式，拒绝其它任何文件
+        String lowerFileName = originalFileName.toLowerCase();
+        boolean isSupportedType = lowerFileName.endsWith(".txt")
+                || lowerFileName.endsWith(".docx")
+                || lowerFileName.endsWith(".pdf");
+        if (!isSupportedType) {
+            throw new RuntimeException("不支持的文件格式，仅支持 TXT / DOCX / PDF");
+        }
+
         // 2. 创建上传目录（不存在则自动创建）
         File uploadDir = new File(uploadPath);
         if (!uploadDir.exists()) {
             boolean isCreated = uploadDir.mkdirs();
-            System.out.println("===== 上传目录创建结果：" + (isCreated ? "成功" : "失败") + " =====\");
+            System.out.println("===== 上传目录创建结果：" + (isCreated ? "成功" : "失败") + " =====");
         }
 
         // 3. 生成唯一文件名（避免重复） + 修复路径遍历漏洞
@@ -80,30 +89,36 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         // 4. 保存文件到本地
         File destFile = new File(fullFilePath);
         file.transferTo(destFile);
-        System.out.println("===== 文件保存成功，路径：" + fullFilePath + " =====\");
+        System.out.println("===== 文件保存成功，路径：" + fullFilePath + " =====");
 
         // 5. 解析文件内容（支持 TXT/ DOCX/ PDF）
         String fileContent = "";
         try {
-            if (originalFileName.toLowerCase().endsWith(".txt")) {
+            if (lowerFileName.endsWith(".txt")) {
                 // 解析 TXT 文件
                 fileContent = FileUtils.readFileToString(destFile, "UTF-8");
-                System.out.println("===== TXT文件解析成功，内容长度：" + fileContent.length() + " =====\");
-            } else if (originalFileName.toLowerCase().endsWith(".docx")) {
+                System.out.println("===== TXT文件解析成功，内容长度：" + fileContent.length() + " =====");
+            } else if (lowerFileName.endsWith(".docx")) {
                 // 解析 DOCX 文件（新增表格解析逻辑）
                 fileContent = parseDocxFile(destFile);
-                System.out.println("===== DOCX文件解析成功，内容长度：" + fileContent.length() + " =====\");
-            } else if (originalFileName.toLowerCase().endsWith(".pdf")) {
+                System.out.println("===== DOCX文件解析成功，内容长度：" + fileContent.length() + " =====");
+            } else if (lowerFileName.endsWith(".pdf")) {
                 // 解析 PDF 文件
                 fileContent = parsePdfFile(destFile);
-                System.out.println("===== PDF文件解析成功，内容长度：" + fileContent.length() + " =====\");
+                System.out.println("===== PDF文件解析成功，内容长度：" + fileContent.length() + " =====");
             } else {
                 fileContent = "不支持的文件格式，仅支持 TXT/ DOCX/ PDF";
-                System.out.println("===== 不支持的文件格式：" + suffix + " =====\");
+                System.out.println("===== 不支持的文件格式：" + suffix + " =====");
             }
         } catch (Exception e) {
-            System.out.println("===== 文件解析失败：" + e.getMessage() + " =====\");
-            fileContent = "文件内容解析失败：" + e.getMessage();
+            System.out.println("===== 文件解析失败：" + e.getMessage() + " =====");
+            // 修复：解析失败时删除已保存的物理文件并抛出异常，触发事务回滚，避免脏数据入库
+            try {
+                Files.deleteIfExists(destFile.toPath());
+            } catch (IOException ignore) {
+                // 物理文件删除失败不影响主流程
+            }
+            throw new RuntimeException("文件解析失败：" + e.getMessage(), e);
         }
 
         // 6. 保存到数据库
@@ -120,7 +135,7 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         if (insertResult <= 0) {
             throw new RuntimeException("文档信息保存到数据库失败");
         }
-        System.out.println("===== 文档信息保存成功，ID：" + document.getId() + " =====\");
+        System.out.println("===== 文档信息保存成功，ID：" + document.getId() + " =====");
 
         // 7. 返回保存后的文档对象（包含ID）
         return document;
@@ -222,6 +237,7 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
      * 清空所有文档
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void clearAllDocuments() {
         // 先删除所有物理文件，再清空数据库
         List<Document> allDocs = listAll();
@@ -244,7 +260,7 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         // 1. 查询文档信息
         Document document = documentMapper.selectById(id);
         if (document == null) {
-            System.out.println("===== 文档不存在，ID：" + id + " =====\");
+            System.out.println("===== 文档不存在，ID：" + id + " =====");
             return false;
         }
 
@@ -253,18 +269,18 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         if (file.exists()) {
             boolean isFileDeleted = file.delete();
             if (isFileDeleted) {
-                System.out.println("===== 物理文件删除成功，路径：" + document.getFilePath() + " =====\");
+                System.out.println("===== 物理文件删除成功，路径：" + document.getFilePath() + " =====");
             } else {
                 throw new RuntimeException("物理文件删除失败，路径：" + document.getFilePath());
             }
         } else {
-            System.out.println("===== 物理文件不存在，路径：" + document.getFilePath() + " =====\");
+            System.out.println("===== 物理文件不存在，路径：" + document.getFilePath() + " =====");
         }
 
         // 3. 删除数据库中的记录
         int deleteCount = documentMapper.deleteById(id);
         if (deleteCount > 0) {
-            System.out.println("===== 数据库记录删除成功，ID：" + id + " =====\");
+            System.out.println("===== 数据库记录删除成功，ID：" + id + " =====");
             return true;
         } else {
             throw new RuntimeException("数据库记录删除失败，ID：" + id);

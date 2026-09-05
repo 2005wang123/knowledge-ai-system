@@ -46,7 +46,7 @@ export const uploadDoc = (formData) => {
 // 2. AI 问答
 export const askAI = (data) => {
   return request({
-    url: '/api/ai/ask',
+    url: '/knowledge/generate-answer',
     method: 'post',
     data: data
   })
@@ -55,14 +55,14 @@ export const askAI = (data) => {
 // 3. 获取文档列表（后续你补全后端接口后用）
 export const getDocList = () => {
   return request({
-    url: '/document/list',
+    url: '/document/listAll',
     method: 'get'
   })
 }
 // 清空所有文档记录
 export const clearAllDocuments = () => {
   return request({
-    url: '/document/clear',
+    url: '/document/clearAll',
     method: 'delete'
   })
 }
