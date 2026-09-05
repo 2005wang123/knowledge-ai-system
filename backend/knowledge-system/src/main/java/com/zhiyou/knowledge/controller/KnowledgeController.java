@@ -51,9 +51,9 @@ public class KnowledgeController {
 
             return knowledgeService.generateAnswer(questionObj.toString().trim(), docId);
         } catch (IllegalArgumentException e) {
-            // 业务校验类错误（如：文档不存在、文档内容为空），直接把原因返回给用户
+            // 业务校验类错误：日志保留详细原因，对外返回通用提示，避免泄露内部实现细节
             log.warn("问答业务校验失败: {}", e.getMessage());
-            return e.getMessage();
+            return "问答失败：请求参数或业务状态不合法";
         } catch (Exception e) {
             // 其它异常（如 DeepSeek 调用失败）：记录详细日志，返回通用提示
             log.error("生成AI回答时发生异常", e);
